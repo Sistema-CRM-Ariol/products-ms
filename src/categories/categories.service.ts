@@ -116,8 +116,32 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
 
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return `This action updates a #${id} category`;
+  async update(id: number, updateCategoryDto: UpdateCategoryDto) {
+  
+    const { name } = updateCategoryDto;
+
+    const category = await this.categories.findFirst({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new RpcException({
+        message: "No se encontro la categoria",
+        status: HttpStatus.NOT_FOUND
+      });
+    }
+
+    const updateBrand = await this.categories.update({
+      where: { id },
+      data: {
+        name,
+      },
+    });
+
+    return {
+      message: 'Categoria actualizada',
+      updateBrand,
+    };
   }
 
   async remove(id: number) {

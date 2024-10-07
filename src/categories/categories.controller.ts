@@ -21,16 +21,16 @@ export class CategoriesController {
 
   @MessagePattern('findOneCategory')
   findOne(@Payload() id: number) {
-    return this.categoriesService.findOne(id);
+    return this.categoriesService.findOne(+id);
   }
 
   @MessagePattern('updateCategory')
   update(@Payload() updateCategoryDto: UpdateCategoryDto) {
-    return this.categoriesService.update(updateCategoryDto.id, updateCategoryDto);
+    return this.categoriesService.update(+updateCategoryDto.id, updateCategoryDto);
   }
 
   @MessagePattern('removeCategory')
   remove(@Payload() id: number) {
-    return this.categoriesService.remove(id);
+    return this.categoriesService.remove(+id);
   }
 }
