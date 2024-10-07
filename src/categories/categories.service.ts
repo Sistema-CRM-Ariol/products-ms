@@ -117,7 +117,6 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-  
     const { name } = updateCategoryDto;
 
     const category = await this.categories.findFirst({

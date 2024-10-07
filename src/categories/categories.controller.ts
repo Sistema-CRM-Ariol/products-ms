@@ -25,8 +25,8 @@ export class CategoriesController {
   }
 
   @MessagePattern('updateCategory')
-  update(@Payload() updateCategoryDto: UpdateCategoryDto) {
-    return this.categoriesService.update(+updateCategoryDto.id, updateCategoryDto);
+  update(@Payload() {id,  updateCategoryDto}: {id: number, updateCategoryDto: UpdateCategoryDto} ) {
+    return this.categoriesService.update(+id, updateCategoryDto);
   }
 
   @MessagePattern('removeCategory')
