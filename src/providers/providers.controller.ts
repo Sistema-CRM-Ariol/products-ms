@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ProvidersService } from './providers.service';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
+import { PaginationDto } from 'src/common';
 
 @Controller()
 export class ProvidersController {
@@ -14,22 +15,22 @@ export class ProvidersController {
   }
 
   @MessagePattern('findAllProviders')
-  findAll() {
-    return this.providersService.findAll();
+  findAll(@Payload() paginationDto: PaginationDto) {
+    return this.providersService.findAll(paginationDto);
   }
 
   @MessagePattern('findOneProvider')
   findOne(@Payload() id: number) {
-    return this.providersService.findOne(id);
+    return this.providersService.findOne(+id);
   }
 
   @MessagePattern('updateProvider')
   update(@Payload() updateProviderDto: UpdateProviderDto) {
-    return this.providersService.update(updateProviderDto.id, updateProviderDto);
+    return this.providersService.update(+updateProviderDto.id, updateProviderDto);
   }
 
   @MessagePattern('removeProvider')
   remove(@Payload() id: number) {
-    return this.providersService.remove(id);
+    return this.providersService.remove(+id);
   }
 }
