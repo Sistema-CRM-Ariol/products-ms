@@ -25,8 +25,8 @@ export class ProvidersController {
   }
 
   @MessagePattern('updateProvider')
-  update(@Payload() updateProviderDto: UpdateProviderDto) {
-    return this.providersService.update(+updateProviderDto.id, updateProviderDto);
+  update(@Payload() { id, updateProviderDto }: {id: number, updateProviderDto: UpdateProviderDto}) {
+    return this.providersService.update(+id, updateProviderDto);
   }
 
   @MessagePattern('removeProvider')

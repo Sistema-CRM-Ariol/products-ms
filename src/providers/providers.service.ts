@@ -98,14 +98,93 @@ export class ProvidersService {
   }
 
   async findOne(id: number) {
-    return `This action returns a #${id} provider`;
+
+    const provider = await this.prisma.providers.findFirst({
+      where: { id },
+      include: {
+        products: true,
+      }
+    })
+
+    if (!provider) {
+      throw new RpcException({
+        message: "No se encontro el proveedor",
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    return {
+      provider
+    };
   }
 
   async update(id: number, updateProviderDto: UpdateProviderDto) {
-    return `This action updates a #${id} provider`;
+    const providerExists = await this.prisma.providers.findFirst({ where: { id } })
+
+    if (!providerExists) {
+      throw new RpcException({
+        message: "No se encontro el proveedor",
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    try {
+
+      const provider = await this.prisma.providers.update({
+        data: {
+          ...updateProviderDto,
+        },
+        where: { id }
+      })
+
+      return {
+        message: "Se actualizo la información",
+        provider,
+      }
+
+    } catch (error) {
+
+      console.log(error)
+
+      if (error.code == 'P2002' && error.meta.target[0] == "name") {
+
+        throw new RpcException({
+          message: "El nombre pertenece a otro proveedor",
+          status: HttpStatus.BAD_REQUEST,
+        });
+      }
+
+      if (error.code == 'P2002' && error.meta.target.includes("phone1","phone2")) {
+
+        throw new RpcException({
+          message: "El telefono pertenece a otro proveedor",
+          status: HttpStatus.BAD_REQUEST,
+        });
+      }
+
+      throw new RpcException({
+        message: "Error en el servidor, revise los logs del sistema",
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
+
+    }
   }
 
   async remove(id: number) {
-    return `This action removes a #${id} provider`;
+    const provider = await this.prisma.providers.findFirst({ where: { id } })
+
+    if (!provider) {
+      throw new RpcException({
+        message: "No se encontro el proveedor",
+        status: HttpStatus.NOT_FOUND,
+      });
+    }
+
+    await this.prisma.providers.delete({ where: { id } })
+
+    return {
+      provider,
+      message: "Se elimino el proveedor del sistema"
+    };
   }
 }
