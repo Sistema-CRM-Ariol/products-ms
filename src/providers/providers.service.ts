@@ -73,13 +73,15 @@ export class ProvidersService {
       }
     });
 
+    console.log(totalPages)
+
     const lastPage = Math.ceil(totalPages / limit);
 
     return {
       providers: await this.prisma.providers.findMany({
         where: {
           name: {
-            contains: search,
+            contains: search
           },
         },
         skip: (page - 1) * limit,
