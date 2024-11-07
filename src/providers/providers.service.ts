@@ -54,7 +54,7 @@ export class ProvidersService {
           skip: (page - 1) * limit,
           take: limit,
           orderBy: {
-            createdAt: "desc"
+            updatedAt: "desc"
           }
         }),
         meta: {
