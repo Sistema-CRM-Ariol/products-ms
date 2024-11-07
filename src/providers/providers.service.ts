@@ -4,6 +4,7 @@ import { UpdateProviderDto } from './dto/update-provider.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
+import { providersSeeder } from 'src/data';
 
 @Injectable()
 export class ProvidersService {
@@ -188,5 +189,17 @@ export class ProvidersService {
       provider,
       message: "Se elimino el proveedor del sistema"
     };
+  }
+
+  async seed() {
+    await this.prisma.providers.deleteMany();
+
+    await this.prisma.providers.createMany({
+      data: providersSeeder
+    })
+
+    return {
+      message: "Se insertaron los 50 proveedores de prueba"
+    }
   }
 }

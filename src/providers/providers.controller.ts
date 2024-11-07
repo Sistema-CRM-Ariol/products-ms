@@ -33,4 +33,9 @@ export class ProvidersController {
   remove(@Payload() id: number) {
     return this.providersService.remove(+id);
   }
+
+  @MessagePattern('seedProviders')
+  seed() {
+    return this.providersService.seed();
+  }
 }
