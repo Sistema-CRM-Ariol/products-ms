@@ -20,12 +20,17 @@ export class BrandsController {
   }
 
   @MessagePattern('updateBrand')
-  update(@Payload() {id, updateBrandDto}: {id: string, updateBrandDto: UpdateBrandDto}) {
+  update(@Payload() { id, updateBrandDto }: {id: string, updateBrandDto: UpdateBrandDto}) {
     return this.brandsService.update(id, updateBrandDto);
   }
 
   @MessagePattern('removeBrand')
   remove(@Payload() id: string) {
     return this.brandsService.remove(id);
+  }
+
+  @MessagePattern('seedBrands')
+  seed() {
+    return this.brandsService.seed();
   }
 }

@@ -1,23 +1,20 @@
 import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { RpcException } from '@nestjs/microservices';
 import { convertToSlug, PaginationDto } from 'src/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { categoriesSeeder } from 'src/data/categories.seeder';
 
 @Injectable()
-export class CategoriesService extends PrismaClient implements OnModuleInit {
+export class CategoriesService {
 
-  private readonly logger = new Logger('ProductsService');
-
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Products Database connected');
-  }
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createCategoryDto: CreateCategoryDto) {
 
-    const categoryExists = await this.categories.findFirst({
+    const categoryExists = await this.prisma.categories.findFirst({
       where: { name: createCategoryDto.name }
     });
 
@@ -31,7 +28,7 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
 
     const slug = convertToSlug(createCategoryDto.name);
 
-    const category = await this.categories.create({
+    const category = await this.prisma.categories.create({
       data: { ...createCategoryDto, slug }
     })
 
@@ -44,17 +41,17 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
   async findAll(paginationDto: PaginationDto) {
     const { page, limit, search } = paginationDto;
 
-    const totalCategories = await this.categories.count();
+    const totalCategories = await this.prisma.categories.count();
 
     if (!search) {
       const lastPage = Math.ceil(totalCategories / limit);
 
       return {
-        categories: await this.categories.findMany({
+        categories: await this.prisma.categories.findMany({
           skip: (page - 1) * limit,
           take: limit,
           orderBy: {
-            createdAt: "desc"
+            updatedAt: "desc"
           }
         }),
         meta: {
@@ -65,7 +62,7 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
       }
     }
 
-    const totalPages = await this.categories.count({
+    const totalPages = await this.prisma.categories.count({
       where: {
         name: {
           contains: search
@@ -76,17 +73,16 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
     const lastPage = Math.ceil(totalPages / limit);
 
     return {
-      categories: await this.categories.findMany({
+      categories: await this.prisma.categories.findMany({
         where: {
           name: {
             contains: search,
-
           },
         },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: {
-          createdAt: "desc"
+          updatedAt: "desc"
         }
       }),
       meta: {
@@ -99,7 +95,7 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
 
   async findOne(id: number) {
 
-    const category = await this.categories.findFirst({
+    const category = await this.prisma.categories.findFirst({
       where: { id }
     })
 
@@ -119,7 +115,7 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
     const { name } = updateCategoryDto;
 
-    const category = await this.categories.findFirst({
+    const category = await this.prisma.categories.findFirst({
       where: { id },
     });
 
@@ -130,7 +126,7 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
       });
     }
 
-    const updateBrand = await this.categories.update({
+    const updateBrand = await this.prisma.categories.update({
       where: { id },
       data: {
         name,
@@ -145,7 +141,7 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
 
   async remove(id: number) {
 
-    const categoryExists = await this.categories.findFirst({ where: { id } })
+    const categoryExists = await this.prisma.categories.findFirst({ where: { id } })
 
     if (!categoryExists) {
       throw new RpcException({
@@ -154,12 +150,25 @@ export class CategoriesService extends PrismaClient implements OnModuleInit {
       });
     }
 
-    const category = await this.categories.delete({
+    const category = await this.prisma.categories.delete({
       where: { id },
     });
 
     return {
       message: `Se elimino la categoria ${category.name}`,
     };
+  }
+
+  async seed() {
+    await this.prisma.categories.deleteMany();
+
+    await this.prisma.categories.createMany({
+      data: categoriesSeeder,
+      skipDuplicates: true
+    })
+
+    return {
+      message: "Se insertaron 20 categorias de prueba"
+    }
   }
 }

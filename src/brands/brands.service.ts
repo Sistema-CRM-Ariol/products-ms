@@ -1,29 +1,19 @@
-import {
-  Logger,
-  Injectable,
-  OnModuleInit,
-  HttpStatus,
-} from '@nestjs/common';
-
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { PaginationDto } from 'src/common';
-import { PrismaClient } from '@prisma/client';
-
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { RpcException } from '@nestjs/microservices';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { brandsSeeder } from 'src/data';
 
 @Injectable()
-export class BrandsService extends PrismaClient implements OnModuleInit {
-  private readonly logger = new Logger('ProductsService');
+export class BrandsService {
 
-  onModuleInit() {
-    this.$connect();
-    this.logger.log('Products Database connected');
-  }
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createBrandDto: CreateBrandDto) {
-    const marcaExiste = await this.marcas.findFirst({
-      where: { nombre: createBrandDto.nombre }
+    const marcaExiste = await this.prisma.brands.findFirst({
+      where: { name: createBrandDto.name }
     });
 
     if (marcaExiste) {
@@ -33,7 +23,7 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
       });
     }
 
-    const marca = await this.marcas.create({
+    const marca = await this.prisma.brands.create({
       data: createBrandDto,
     });
 
@@ -46,17 +36,17 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
   async findAll(paginationDto: PaginationDto) {
     const { page, limit, search } = paginationDto;
 
-    const totalBrands = await this.marcas.count();
+    const totalBrands = await this.prisma.brands.count();
 
     if (!search) {
       const lastPage = Math.ceil(totalBrands / limit);
 
       return {
-        brands: await this.marcas.findMany({
+        brands: await this.prisma.brands.findMany({
           skip: (page - 1) * limit,
           take: limit,
           orderBy: {
-            createdAt: "desc"
+            updatedAt: "desc"
           }
         }),
         meta: {
@@ -67,11 +57,11 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
       }
     }
 
-    const totalPages = await this.marcas.count({
+    const totalPages = await this.prisma.brands.count({
       where: {
         OR: [
           {
-            nombre: {
+            name: {
               contains: search
             },
           }
@@ -83,11 +73,11 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
     const lastPage = Math.ceil(totalPages / limit);
 
     return {
-      brands: await this.marcas.findMany({
+      brands: await this.prisma.brands.findMany({
         where: {
           OR: [
             {
-              nombre: {
+              name: {
                 contains: search
               },
             }
@@ -97,7 +87,7 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: {
-          createdAt: "desc"
+          updatedAt: "desc"
         }
       }),
       meta: {
@@ -109,9 +99,7 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
   }
 
   async update(id: string, updateBrandDto: UpdateBrandDto) {
-    const { descripcion, nombre } = updateBrandDto;
-
-    const marca = await this.marcas.findFirst({
+    const marca = await this.prisma.brands.findFirst({
       where: { id },
     });
 
@@ -122,12 +110,9 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
       });
     }
 
-    const updateBrand = await this.marcas.update({
+    const updateBrand = await this.prisma.brands.update({
       where: { id },
-      data: {
-        nombre,
-        descripcion,
-      },
+      data: updateBrandDto,
     });
 
     return {
@@ -138,7 +123,7 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
 
   async remove(id: string) {
 
-    const marcaExists = await this.marcas.findFirst({ where: { id } })
+    const marcaExists = await this.prisma.brands.findFirst({ where: { id } })
 
     if (!marcaExists) {
       throw new RpcException({
@@ -147,7 +132,7 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
       });
     }
 
-    const marca = await this.marcas.delete({
+    const marca = await this.prisma.brands.delete({
       where: { id },
     });
 
@@ -155,5 +140,18 @@ export class BrandsService extends PrismaClient implements OnModuleInit {
       message: 'Se elimino la marca',
       marca,
     };
+  }
+
+  async seed() {
+    await this.prisma.brands.deleteMany();
+
+    await this.prisma.brands.createMany({
+      data: brandsSeeder,
+      skipDuplicates: true
+    })
+
+    return {
+      message: "Se insertaron 10 marcas de prueba"
+    }
   }
 }

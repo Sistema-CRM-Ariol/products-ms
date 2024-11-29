@@ -33,4 +33,9 @@ export class CategoriesController {
   remove(@Payload() id: number) {
     return this.categoriesService.remove(+id);
   }
+
+  @MessagePattern('seedCategories')
+  seed() {
+    return this.categoriesService.seed();
+  }
 }

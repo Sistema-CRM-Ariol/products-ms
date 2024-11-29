@@ -18,13 +18,13 @@ model Products {
   name          String @unique
   description   String
   serialNumber  String @unique
-  image         String
+  image         String?
   pricePurchase Float
   priceSale     Float
 
   slug String @unique
 
-  brand   Marcas? @relation(fields: [brandId], references: [id])
+  brand   Brands? @relation(fields: [brandId], references: [id])
   brandId String?
 
   provider   Providers? @relation(fields: [providerId], references: [id])
@@ -39,12 +39,12 @@ model Products {
   @@map("products")
 }
 
-model Marcas {
+model Brands {
   id          String  @id @default(uuid())
-  nombre      String  @unique
-  descripcion String?
+  name        String  @unique
+  description String?
 
-  productos Products[]
+  products Products[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
