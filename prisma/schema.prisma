@@ -14,10 +14,10 @@ datasource db {
 }
 
 model Products {
-  id            String @id @default(uuid())
-  name          String @unique
+  id            String  @id @default(uuid())
+  name          String  @unique
   description   String
-  serialNumber  String @unique
+  serialNumber  String  @unique
   image         String?
   pricePurchase Float
   priceSale     Float
@@ -33,6 +33,8 @@ model Products {
   category   Categories? @relation(fields: [categoryId], references: [id])
   categoryId Int?
 
+  isActive Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -45,6 +47,7 @@ model Brands {
   description String?
 
   products Products[]
+  isActive Boolean    @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -58,6 +61,7 @@ model Categories {
   slug String @unique
 
   products Products[]
+  isActive Boolean    @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,6 +78,7 @@ model Providers {
   direction String?
 
   products Products[]
+  isActive Boolean    @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

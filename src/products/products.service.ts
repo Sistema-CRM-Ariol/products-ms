@@ -5,6 +5,7 @@ import { convertToSlug, PaginationDto } from 'src/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { productsSeeder } from 'src/data/products.seeder';
 import { RpcException } from '@nestjs/microservices';
+import { FilterPaginationDto } from 'src/common/dto/filter-pagination.dto';
 
 @Injectable()
 export class ProductsService {
@@ -51,63 +52,70 @@ export class ProductsService {
 
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    const { page, limit, search } = paginationDto;
+  async findAll(filterPaginationDto: FilterPaginationDto) {
+    const { page, limit, search, isActive } = filterPaginationDto;
 
+    const filters: any[] = [];
 
-    if (!search) {
-      const totalProducts = await this.prisma.products.count();
-      const lastPage = Math.ceil(totalProducts / limit);
-
-      const products = await this.prisma.products.findMany({
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: {
-          updatedAt: "desc"
-        }
-      })
-
-      return {
-        products,
-        meta: {
-          total: totalProducts,
-          page: page,
-          lastPage: lastPage,
-        }
-      }
+    if (search) {
+      filters.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { serialNumber: { contains: search, mode: 'insensitive' } },
+        ],
+      });
     }
 
-    const totalProducts = await this.prisma.products.count({
-      where: {
-        name: {
-          contains: search
-        },
-      }
-    });
+    // Si status viene definido, lo agregamos
+    if (isActive !== undefined) {
+      filters.push({ isActive });
+    }
 
-    const lastPage = Math.ceil(totalProducts / limit);
+    // Si existen filtros, los combinamos en un AND; de lo contrario, la consulta no tiene filtro
+    const whereClause = filters.length > 0 ? { AND: filters } : {};
 
-    const products = await this.prisma.products.findMany({
-      where: {
-        name: {
-          contains: search,
-        },
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: {
-        updatedAt: "desc"
-      }
-    })
+    // Ejecutamos la consulta de conteo y búsqueda con el mismo whereClause
+    const [totalProducts, products] = await Promise.all([
+      this.prisma.products.count({
+        where: whereClause,
+      }),
+      this.prisma.products.findMany({
+        take: limit,
+        skip: (page! - 1) * limit!,
+        orderBy: { updatedAt: 'desc' },
+        where: { ...whereClause, },
+        select: {
+          name: true,
+          slug: true,
+          brand: {
+            select: { name: true }
+          },
+          category: {
+            select: { name: true }
+          },
+          provider: {
+            select: { name: true }
+          },
+          id: true, 
+          image: true,
+          serialNumber: true, 
+          isActive: true, 
+          createdAt: true, 
+        }
+
+      }),
+    ]);
+
+    const lastPage = Math.ceil(totalProducts / limit!);
 
     return {
       products,
       meta: {
+        page,
+        lastPage,
         total: totalProducts,
-        page: page,
-        lastPage: lastPage,
-      }
-    }
+      },
+    };
   }
 
   async findOne(term: string) {
