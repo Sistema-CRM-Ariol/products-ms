@@ -34,9 +34,13 @@ export class ProductsController {
     return this.productsService.remove(id);
   }
 
-  
   @MessagePattern('seedProducts')
   seed() {
     return this.productsService.seed();
+  }
+
+  @MessagePattern('findProductsByIds')
+  findProductsByIds(@Payload() productIds: string[]) {
+    return this.productsService.findProductsByIds(productIds);
   }
 }

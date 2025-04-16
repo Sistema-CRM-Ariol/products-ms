@@ -218,4 +218,23 @@ export class ProductsService {
       message: "Se insertaron 20 productos de prueba"
     }
   }
+
+  async findProductsByIds(productIds: string[]) {
+    const products = await this.prisma.products.findMany({
+      where: {
+        id: { in: productIds },
+      },
+      select: {
+        id: true,
+        image: true,
+        isActive: true,
+        name: true,
+        priceSale: true,
+        serialNumber: true,
+        slug: true,
+      }
+    });
+
+    return products;
+  } 
 }
