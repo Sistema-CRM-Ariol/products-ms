@@ -27,9 +27,6 @@ model Products {
   brand   Brands? @relation(fields: [brandId], references: [id])
   brandId String?
 
-  provider   Providers? @relation(fields: [providerId], references: [id])
-  providerId Int?
-
   category   Categories? @relation(fields: [categoryId], references: [id])
   categoryId Int?
 
@@ -67,21 +64,4 @@ model Categories {
   updatedAt DateTime @updatedAt
 
   @@map("categories")
-}
-
-model Providers {
-  id Int @id @default(autoincrement())
-
-  name      String  @unique
-  phone1    String? @unique
-  phone2    String? @unique
-  direction String?
-
-  products Products[]
-  isActive Boolean    @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("providers")
 }

@@ -12,7 +12,7 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) { }
 
   async create(createProductDto: CreateProductDto) {
-    const { brandId, providerId, categoryId, ...newProduct } = createProductDto;
+    const { brandId, categoryId, ...newProduct } = createProductDto;
 
     const slug = convertToSlug(newProduct.name);
 
@@ -40,14 +40,12 @@ export class ProductsService {
         slug,
         brandId,
         categoryId: +categoryId,
-        providerId: +providerId,
 
       }
     })
 
     return {
       message: "Producto creada con exito",
-      product
     }
 
   }
@@ -93,9 +91,6 @@ export class ProductsService {
           category: {
             select: { name: true }
           },
-          provider: {
-            select: { name: true }
-          },
           id: true, 
           image: true,
           serialNumber: true, 
@@ -129,11 +124,6 @@ export class ProductsService {
         category: {
           select: {
             id: true, name: true, slug: true,
-          }
-        },
-        provider: {
-          select: {
-            id: true, name: true, phone1: true, phone2: true, direction: true
           }
         },
       },
@@ -193,10 +183,9 @@ export class ProductsService {
     };
 
     const brands = await this.prisma.brands.findMany();
-    const providers = await this.prisma.providers.findMany();
     const categories = await this.prisma.categories.findMany();
 
-    if (!brands.length || !providers.length || !categories.length) {
+    if (!brands.length || !categories.length) {
       throw new Error("Las tablas de marcas, proveedores o categorías están vacías.");
     }
 
@@ -204,7 +193,6 @@ export class ProductsService {
       return {
         ...product,
         brandId: getRandomItem(brands)?.id || brands[0].id,
-        providerId: getRandomItem(providers)?.id || providers[0].id,
         categoryId: getRandomItem(categories)?.id || categories[0].id,
       };
     });

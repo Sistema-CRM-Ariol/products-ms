@@ -13,6 +13,7 @@ async function bootstrap() {
       transport: Transport.NATS,
       options: {
         servers: envs.natsServers,
+        name: 'Products Microservice',
       },
     },
   );
@@ -25,6 +26,7 @@ async function bootstrap() {
   );
 
   await app.listen();
-  logger.log(`Products Microservice running on port ${envs.port}`);
+  logger.log(`Products Microservice running on NATS server: ${envs.natsServers}`);
+
 }
 bootstrap();

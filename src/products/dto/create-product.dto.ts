@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateProductDto {
@@ -23,9 +22,6 @@ export class CreateProductDto {
 
     @IsNumber()
     priceSale: number;
-    
-    @IsString()
-    providerId?: string;
     
     @IsString()
     serialNumber: string;
