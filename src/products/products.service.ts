@@ -17,7 +17,7 @@ export class ProductsService {
     const slug = convertToSlug(newProduct.name);
 
     const productExists = await this.prisma.products.findFirst({
-      where: { 
+      where: {
         OR: [
           { name: newProduct.name },
           { slug }
@@ -34,8 +34,8 @@ export class ProductsService {
     }
 
 
-    const product = await this.prisma.products.create({
-      data: { 
+    await this.prisma.products.create({
+      data: {
         ...newProduct,
         slug,
         brandId,
@@ -91,11 +91,11 @@ export class ProductsService {
           category: {
             select: { name: true }
           },
-          id: true, 
+          id: true,
           image: true,
-          serialNumber: true, 
-          isActive: true, 
-          createdAt: true, 
+          serialNumber: true,
+          isActive: true,
+          createdAt: true,
         }
 
       }),
@@ -197,14 +197,15 @@ export class ProductsService {
       };
     });
 
-    // return products
     await this.prisma.products.createMany({
-      data: products
-    })
+      data: products,
+    });
 
     return {
-      message: "Se insertaron 20 productos de prueba"
-    }
+      message: "Productos creados con exito",
+      products: products.length,
+    };
+
   }
 
   async findProductsByIds(productIds: string[]) {
@@ -224,5 +225,5 @@ export class ProductsService {
     });
 
     return products;
-  } 
+  }
 }
