@@ -3,7 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { PaginationDto } from 'src/common';
+import { FilterPaginationDto } from 'src/common/dto/filter-pagination.dto';
 
 @Controller()
 export class CategoriesController {
@@ -15,8 +15,8 @@ export class CategoriesController {
   }
 
   @MessagePattern('findAllCategories')
-  findAll(@Payload() paginationDto: PaginationDto) {
-    return this.categoriesService.findAll(paginationDto);
+  findAll(@Payload() filterPaginationDto: FilterPaginationDto) {
+    return this.categoriesService.findAll(filterPaginationDto);
   }
 
   @MessagePattern('findOneCategory')
