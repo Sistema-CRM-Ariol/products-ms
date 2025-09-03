@@ -4,6 +4,7 @@ import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { PaginationDto } from 'src/common';
+import { FilterPaginationDto } from 'src/common/dto/filter-pagination.dto';
 
 @Controller()
 export class BrandsController {
@@ -15,8 +16,8 @@ export class BrandsController {
   }
 
   @MessagePattern('findAllBrands')
-  findAll(@Payload() paginationDto: PaginationDto) {
-    return this.brandsService.findAll(paginationDto);
+  findAll(@Payload() filterPaginationDto: FilterPaginationDto) {
+    return this.brandsService.findAll(filterPaginationDto);
   }
 
   @MessagePattern('updateBrand')

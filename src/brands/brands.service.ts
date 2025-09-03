@@ -1,157 +1,138 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { PaginationDto } from 'src/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { RpcException } from '@nestjs/microservices';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { brandsSeeder } from 'src/data';
+import { FilterPaginationDto } from 'src/common/dto/filter-pagination.dto';
 
 @Injectable()
 export class BrandsService {
 
-  constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService) { }
 
-  async create(createBrandDto: CreateBrandDto) {
-    const marcaExiste = await this.prisma.brands.findFirst({
-      where: { name: createBrandDto.name }
-    });
+    async create(createBrandDto: CreateBrandDto) {
+        const marcaExiste = await this.prisma.brands.findFirst({
+            where: { name: createBrandDto.name }
+        });
 
-    if (marcaExiste) {
-      throw new RpcException({
-        message: "La marca ya esta registrada",
-        status: HttpStatus.BAD_REQUEST
-      });
-    }
-
-    const marca = await this.prisma.brands.create({
-      data: createBrandDto,
-    });
-
-    return {
-      message: 'Se registro la marca exitosamente',
-      marca,
-    };
-  }
-
-  async findAll(paginationDto: PaginationDto) {
-    const { page, limit, search } = paginationDto;
-
-    const totalBrands = await this.prisma.brands.count();
-
-    if (!search) {
-      const lastPage = Math.ceil(totalBrands / limit);
-
-      return {
-        brands: await this.prisma.brands.findMany({
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: {
-            updatedAt: "desc"
-          }
-        }),
-        meta: {
-          total: totalBrands,
-          page: page,
-          lastPage: lastPage,
+        if (marcaExiste) {
+            throw new RpcException({
+                message: "La marca ya esta registrada",
+                status: HttpStatus.BAD_REQUEST
+            });
         }
-      }
+
+        const marca = await this.prisma.brands.create({
+            data: createBrandDto,
+        });
+
+        return {
+            message: 'Se registro la marca exitosamente',
+            marca,
+        };
     }
 
-    const totalPages = await this.prisma.brands.count({
-      where: {
-        OR: [
-          {
-            name: {
-              contains: search
+    async findAll(filterPaginationDto: FilterPaginationDto) {
+        const { page, limit, search, isActive } = filterPaginationDto;
+
+        const filters: any[] = [];
+
+        if (search) {
+            filters.push({
+                OR: [
+                    { name: { contains: search, mode: 'insensitive' } },
+                ],
+            });
+        }
+
+        if (isActive !== undefined) {
+            filters.push({ isActive });
+        }
+
+
+        // Si existen filtros, los combinamos en un AND; de lo contrario, la consulta no tiene filtro
+        const whereClause = filters.length > 0 ? { AND: filters } : {};
+
+        // Ejecutamos la consulta de conteo y búsqueda con el mismo whereClause
+        const [totalBrands, brands] = await Promise.all([
+            this.prisma.brands.count({
+                where: whereClause,
+            }),
+            this.prisma.brands.findMany({
+                take: limit,
+                skip: (page! - 1) * limit!,
+                orderBy: { updatedAt: 'desc' },
+                where: { ...whereClause, },
+            }),
+        ]);
+
+        const lastPage = Math.ceil(totalBrands / limit!);
+
+        return {
+            brands,
+            meta: {
+                page,
+                lastPage,
+                total: totalBrands,
             },
-          }
-        ]
+        };
+    }
 
-      }
-    });
+    async update(id: string, updateBrandDto: UpdateBrandDto) {
+        const marca = await this.prisma.brands.findFirst({
+            where: { id },
+        });
 
-    const lastPage = Math.ceil(totalPages / limit);
-
-    return {
-      brands: await this.prisma.brands.findMany({
-        where: {
-          OR: [
-            {
-              name: {
-                contains: search
-              },
-            }
-          ]
-
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: {
-          updatedAt: "desc"
+        if (!marca) {
+            throw new RpcException({
+                message: "No se encontro la marca",
+                status: HttpStatus.NOT_FOUND
+            });
         }
-      }),
-      meta: {
-        total: totalBrands,
-        page: page,
-        lastPage: lastPage,
-      }
-    }
-  }
 
-  async update(id: string, updateBrandDto: UpdateBrandDto) {
-    const marca = await this.prisma.brands.findFirst({
-      where: { id },
-    });
+        const updateBrand = await this.prisma.brands.update({
+            where: { id },
+            data: updateBrandDto,
+        });
 
-    if (!marca) {
-      throw new RpcException({
-        message: "No se encontro la marca",
-        status: HttpStatus.NOT_FOUND
-      });
+        return {
+            message: 'Marca actualizada',
+            updateBrand,
+        };
     }
 
-    const updateBrand = await this.prisma.brands.update({
-      where: { id },
-      data: updateBrandDto,
-    });
+    async remove(id: string) {
 
-    return {
-      message: 'Marca actualizada',
-      updateBrand,
-    };
-  }
+        const marcaExists = await this.prisma.brands.findFirst({ where: { id } })
 
-  async remove(id: string) {
+        if (!marcaExists) {
+            throw new RpcException({
+                message: "No se encontro la marca",
+                status: HttpStatus.NOT_FOUND
+            });
+        }
 
-    const marcaExists = await this.prisma.brands.findFirst({ where: { id } })
+        const marca = await this.prisma.brands.delete({
+            where: { id },
+        });
 
-    if (!marcaExists) {
-      throw new RpcException({
-        message: "No se encontro la marca",
-        status: HttpStatus.NOT_FOUND
-      });
+        return {
+            message: 'Se elimino la marca',
+            marca,
+        };
     }
 
-    const marca = await this.prisma.brands.delete({
-      where: { id },
-    });
+    async seed() {
+        await this.prisma.brands.deleteMany();
 
-    return {
-      message: 'Se elimino la marca',
-      marca,
-    };
-  }
+        await this.prisma.brands.createMany({
+            data: brandsSeeder,
+            skipDuplicates: true
+        })
 
-  async seed() {
-    await this.prisma.brands.deleteMany();
-
-    await this.prisma.brands.createMany({
-      data: brandsSeeder,
-      skipDuplicates: true
-    })
-
-    return {
-      message: "Se insertaron 10 marcas de prueba"
+        return {
+            message: "Se insertaron 10 marcas de prueba"
+        }
     }
-  }
 }
