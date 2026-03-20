@@ -227,4 +227,55 @@ export class ProductsService {
 
         return products;
     }
+
+    async getDashboardData() {
+        const [total, active, inactive, byBrandRaw, byCategoryRaw, recentlyAdded] = await Promise.all([
+            this.prisma.products.count(),
+            this.prisma.products.count({ where: { isActive: true } }),
+            this.prisma.products.count({ where: { isActive: false } }),
+            this.prisma.products.groupBy({
+                by: ['brandId'],
+                _count: { _all: true },
+                where: { brandId: { not: null } },
+            }),
+            this.prisma.products.groupBy({
+                by: ['categoryId'],
+                _count: { _all: true },
+                where: { categoryId: { not: null } },
+            }),
+            this.prisma.products.findMany({
+                orderBy: { createdAt: 'desc' },
+                take: 5,
+                select: {
+                    id: true, name: true, serialNumber: true,
+                    priceSale: true, image: true, isActive: true, createdAt: true,
+                    brand: { select: { name: true } },
+                    category: { select: { name: true } },
+                },
+            }),
+        ]);
+
+        const [brands, categories] = await Promise.all([
+            this.prisma.brands.findMany({ select: { id: true, name: true } }),
+            this.prisma.categories.findMany({ select: { id: true, name: true } }),
+        ]);
+
+        const brandMap = Object.fromEntries(brands.map(b => [b.id, b.name]));
+        const categoryMap = Object.fromEntries(categories.map(c => [String(c.id), c.name]));
+
+        const byBrand = byBrandRaw
+            .map(r => ({ brand: brandMap[r.brandId!] ?? r.brandId, count: r._count._all }))
+            .sort((a, b) => b.count - a.count);
+
+        const byCategory = byCategoryRaw
+            .map(r => ({ category: categoryMap[String(r.categoryId!)] ?? r.categoryId, count: r._count._all }))
+            .sort((a, b) => b.count - a.count);
+
+        return {
+            overview: { total, active, inactive },
+            byBrand,
+            byCategory,
+            recentlyAdded,
+        };
+    }
 }

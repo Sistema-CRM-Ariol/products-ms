@@ -43,4 +43,9 @@ export class ProductsController {
   findProductsByIds(@Payload() productIds: string[]) {
     return this.productsService.findProductsByIds(productIds);
   }
+
+  @MessagePattern('products.dashboard')
+  getDashboardData() {
+    return this.productsService.getDashboardData();
+  }
 }
