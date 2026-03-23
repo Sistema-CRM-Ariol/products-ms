@@ -7,7 +7,7 @@ export class CreateProductDto {
     @IsString()
     brandId?: string;
 
-    @IsString()
+    @IsNumber()
     categoryId?: string;
     
     @IsString()
